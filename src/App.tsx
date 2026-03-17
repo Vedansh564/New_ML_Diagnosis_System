@@ -1,9 +1,15 @@
 import { useState } from 'react';
-import { Brain, History, BarChart3, Upload as UploadIcon } from 'lucide-react';
+import {
+  Brain, History, BarChart3, Upload as UploadIcon,
+  Github, BookOpen, Info
+} from 'lucide-react';
+
 import ImageUpload from './components/ImageUpload';
 import ResultsDisplay from './components/ResultsDisplay';
 import HistoryView from './components/HistoryView';
 import Statistics from './components/Statistics';
+
+import { appConfig } from './config/appConfig';
 
 type Tab = 'upload' | 'history' | 'statistics';
 
@@ -26,6 +32,8 @@ function App() {
   const [result, setResult] = useState<PredictionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [refreshSignal, setRefreshSignal] = useState(0);
+
+  const [showModelInfo, setShowModelInfo] = useState(false);
 
   const handleUpload = async (file: File) => {
     setIsLoading(true);
@@ -67,37 +75,78 @@ function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center space-x-4">
-            <div className="bg-blue-600 p-3 rounded-lg">
-              <Brain className="h-8 w-8 text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+
+      {/* 🔥 NAVBAR */}
+      <nav className="sticky top-0 z-50 bg-black bg-opacity-40 backdrop-blur-lg border-b border-white border-opacity-10">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+
+          <div className="flex items-center gap-3">
+            <div className="bg-gradient-to-br from-blue-500 to-cyan-500 p-3 rounded-lg">
+              <Brain className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                AI Medical Diagnosis System
+              <h1 className="text-xl font-bold text-white">
+                AI Medical Diagnosis
               </h1>
-              <p className="text-sm text-gray-600 mt-1">
-                Advanced deep learning for medical image analysis
+              <p className="text-xs text-gray-300">
+                Deep Learning Powered Analysis
               </p>
             </div>
           </div>
-        </div>
-      </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex space-x-2 mb-8 bg-white rounded-lg p-2 shadow-sm border border-gray-200">
+          <div className="flex items-center gap-3 text-white">
+
+            {/* MODEL INFO */}
+            <button
+              onClick={() => setShowModelInfo(true)}
+              title="View AI Model Details"
+              className="p-2 hover:bg-white hover:bg-opacity-10 rounded-lg transition"
+            >
+              <Info className="w-5 h-5" />
+            </button>
+
+            {/* DOCS */}
+            <a
+              href={appConfig.docsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Open Documentation"
+              className="p-2 hover:bg-white hover:bg-opacity-10 rounded-lg transition"
+            >
+              <BookOpen className="w-5 h-5" />
+            </a>
+
+            {/* GITHUB */}
+            <a
+              href={appConfig.githubUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="View Source Code on GitHub"
+              className="p-2 hover:bg-white hover:bg-opacity-10 rounded-lg transition"
+            >
+              <Github className="w-5 h-5" />
+            </a>
+
+          </div>
+        </div>
+      </nav>
+
+      {/* MAIN */}
+      <div className="max-w-7xl mx-auto px-4 py-10">
+
+        {/* TABS */}
+        <div className="flex space-x-2 mb-8 bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-2 border border-white border-opacity-20">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex items-center justify-center space-x-2 px-6 py-3 rounded-md font-medium transition-all ${
+                className={`flex-1 flex items-center justify-center space-x-2 px-6 py-3 rounded-lg font-medium transition-all ${
                   activeTab === tab.id
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg'
+                    : 'text-gray-300 hover:bg-white hover:bg-opacity-10'
                 }`}
               >
                 <Icon className="h-5 w-5" />
@@ -107,7 +156,9 @@ function App() {
           })}
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-8">
+        {/* CONTENT */}
+        <div className="bg-white bg-opacity-95 backdrop-blur rounded-2xl shadow-2xl p-8 border border-white border-opacity-20">
+
           {activeTab === 'upload' && (
             <div className="space-y-8">
               <div>
@@ -115,8 +166,7 @@ function App() {
                   Upload Medical Image
                 </h2>
                 <p className="text-gray-600">
-                  Upload a chest X-ray, retinal image, skin lesion photo, or brain MRI
-                  for automated diagnosis
+                  Upload X-ray, retinal, skin, or MRI images for AI diagnosis
                 </p>
               </div>
 
@@ -128,21 +178,65 @@ function App() {
                 </div>
               )}
 
-              {result && <ResultsDisplay result={result} />}
+              {result && (
+                <div className="animate-in fade-in slide-in-from-bottom-4">
+                  <ResultsDisplay result={result} />
+                </div>
+              )}
             </div>
           )}
 
-          {activeTab === 'history' && <HistoryView refreshSignal={refreshSignal} />}
+          {activeTab === 'history' && (
+            <HistoryView refreshSignal={refreshSignal} />
+          )}
 
-          {activeTab === 'statistics' && <Statistics refreshSignal={refreshSignal} />}
+          {activeTab === 'statistics' && (
+            <Statistics refreshSignal={refreshSignal} />
+          )}
+
         </div>
 
-        <footer className="mt-8 text-center text-sm text-gray-600">
+        {/* FOOTER */}
+        <footer className="mt-12 text-center text-gray-400 text-sm border-t border-white border-opacity-10 pt-6">
+          <p className="mb-2">
+            Powered by EfficientNetB3 | Grad-CAM Visualization
+          </p>
           <p>
-            Powered by EfficientNetB3 with Transfer Learning | Grad-CAM Visualization
+            ⚠️ For research purposes only. Consult professionals for diagnosis.
           </p>
         </footer>
+
       </div>
+
+      {/* 🔥 MODEL INFO MODAL */}
+      {showModelInfo && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 max-w-lg w-full shadow-2xl relative">
+
+            <button
+              onClick={() => setShowModelInfo(false)}
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
+            >
+              ✕
+            </button>
+
+            <h2 className="text-2xl font-bold mb-4 text-gray-900">
+              Model Information
+            </h2>
+
+            <div className="space-y-3 text-gray-700">
+              <p><strong>Name:</strong> {appConfig.modelInfo.name}</p>
+              <p><strong>Version:</strong> {appConfig.modelInfo.version}</p>
+              <p><strong>Accuracy:</strong> {appConfig.modelInfo.accuracy}</p>
+              <p className="text-sm text-gray-600">
+                {appConfig.modelInfo.description}
+              </p>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
