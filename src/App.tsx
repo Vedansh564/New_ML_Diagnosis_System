@@ -25,6 +25,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<PredictionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [refreshSignal, setRefreshSignal] = useState(0);
 
   const handleUpload = async (file: File) => {
     setIsLoading(true);
@@ -47,6 +48,7 @@ function App() {
 
       const data = await response.json();
       setResult(data);
+      setRefreshSignal((prev) => prev + 1);
     } catch (err) {
       setError(
         err instanceof Error
@@ -130,9 +132,9 @@ function App() {
             </div>
           )}
 
-          {activeTab === 'history' && <HistoryView />}
+          {activeTab === 'history' && <HistoryView refreshSignal={refreshSignal} />}
 
-          {activeTab === 'statistics' && <Statistics />}
+          {activeTab === 'statistics' && <Statistics refreshSignal={refreshSignal} />}
         </div>
 
         <footer className="mt-8 text-center text-sm text-gray-600">

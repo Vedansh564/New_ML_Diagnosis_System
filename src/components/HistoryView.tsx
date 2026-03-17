@@ -1,27 +1,33 @@
 import { useEffect, useState } from 'react';
 import { Clock, Activity, TrendingUp } from 'lucide-react';
-import { supabase, Prediction } from '../lib/supabase';
+import { Prediction } from '../lib/supabase';
 
-export default function HistoryView() {
+interface HistoryViewProps {
+  refreshSignal: number;
+}
+
+export default function HistoryView({ refreshSignal }: HistoryViewProps) {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchPredictions();
-  }, []);
+  }, [refreshSignal]);
 
   const fetchPredictions = async () => {
     try {
-      const { data, error } = await supabase
-        .from('predictions')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(20);
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/predictions`);
 
-      if (error) throw error;
-      setPredictions(data || []);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch predictions: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      setPredictions(result.predictions || []);
     } catch (error) {
       console.error('Error fetching predictions:', error);
+      setPredictions([]);
     } finally {
       setLoading(false);
     }

@@ -92,6 +92,9 @@ async def predict_disease(file: UploadFile = File(...)):
             _, buffer = cv2.imencode('.png', cv2.cvtColor(heatmap_img, cv2.COLOR_RGB2BGR))
             heatmap_base64 = base64.b64encode(buffer).decode('utf-8')
 
+        supabase_saved = False
+        supabase_error = None
+
         if supabase:
             try:
                 prediction_data = {
@@ -103,9 +106,17 @@ async def predict_disease(file: UploadFile = File(...)):
                     "is_normal": result["is_normal"],
                     "created_at": datetime.utcnow().isoformat()
                 }
-                supabase.table("predictions").insert(prediction_data).execute()
+                insert_result = supabase.table("predictions").insert(prediction_data).execute()
+                if insert_result.error:
+                    supabase_error = str(insert_result.error)
+                    print(f"Supabase insert error: {supabase_error}")
+                else:
+                    supabase_saved = True
             except Exception as e:
+                supabase_error = str(e)
                 print(f"Error saving to Supabase: {e}")
+        else:
+            supabase_error = "Supabase not configured"
 
         os.remove(file_path)
 
@@ -113,7 +124,9 @@ async def predict_disease(file: UploadFile = File(...)):
             **result,
             "prediction_id": file_id,
             "heatmap": heatmap_base64,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
+            "supabase_saved": supabase_saved,
+            "supabase_error": supabase_error,
         }
 
         return JSONResponse(content=response)

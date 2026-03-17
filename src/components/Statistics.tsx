@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { BarChart3, Activity, CheckCircle, AlertTriangle } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 
 interface Stats {
   total_predictions: number;
@@ -10,45 +9,39 @@ interface Stats {
   disease_distribution: Record<string, number>;
 }
 
-export default function Statistics() {
+interface StatisticsProps {
+  refreshSignal: number;
+}
+
+export default function Statistics({ refreshSignal }: StatisticsProps) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchStats();
-  }, []);
+  }, [refreshSignal]);
 
   const fetchStats = async () => {
     try {
-      const { data, error } = await supabase
-        .from('predictions')
-        .select('*');
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/stats`);
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error(`Failed to fetch stats: ${response.statusText}`);
+      }
 
-      const predictions = data || [];
-      const total = predictions.length;
-
-      const diseaseDistribution: Record<string, number> = {};
-      predictions.forEach((pred) => {
-        diseaseDistribution[pred.predicted_class] =
-          (diseaseDistribution[pred.predicted_class] || 0) + 1;
-      });
-
-      const normalCount = predictions.filter(p => p.is_normal).length;
-      const avgConfidence = total > 0
-        ? predictions.reduce((sum, p) => sum + p.confidence, 0) / total
-        : 0;
+      const data = await response.json();
 
       setStats({
-        total_predictions: total,
-        normal_count: normalCount,
-        abnormal_count: total - normalCount,
-        average_confidence: avgConfidence,
-        disease_distribution: diseaseDistribution,
+        total_predictions: data.total_predictions || 0,
+        normal_count: data.normal_count || 0,
+        abnormal_count: data.abnormal_count || 0,
+        average_confidence: data.average_confidence || 0,
+        disease_distribution: data.disease_distribution || {},
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
+      setStats(null);
     } finally {
       setLoading(false);
     }
